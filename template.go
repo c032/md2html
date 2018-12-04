@@ -57,8 +57,8 @@ const htmlTemplate = `
 	}
 
 	hr {
-		margin: 3rem 0;
 		border: none;
+		margin: 3rem 0;
 
 		border-bottom: 1px solid #ddd;
 	}
