@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"html/template"
 	"io"
@@ -15,20 +14,13 @@ import (
 
 var log = logger.New(os.Stderr, "", 0)
 
-func Render(w io.Writer, r io.Reader) error {
+func Render(title string, w io.Writer, markdown []byte) error {
 	var (
-		err         error
-		rawMarkdown []byte
-
+		err  error
 		tmpl *template.Template
 	)
 
-	rawMarkdown, err = ioutil.ReadAll(r)
-	if err != nil {
-		return err
-	}
-
-	unsafe := blackfriday.Run(rawMarkdown)
+	unsafe := blackfriday.Run(markdown)
 	safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 
 	tmpl, err = template.New("main").Parse(htmlTemplate)
@@ -37,8 +29,10 @@ func Render(w io.Writer, r io.Reader) error {
 	}
 
 	err = tmpl.Execute(w, struct {
+		Title   string
 		Content template.HTML
 	}{
+		Title:   title,
 		Content: template.HTML(safeHTML),
 	})
 	if err != nil {
@@ -49,8 +43,12 @@ func Render(w io.Writer, r io.Reader) error {
 }
 
 func main() {
-	var flagOutputFile string
+	var (
+		flagTitle      string
+		flagOutputFile string
+	)
 
+	flag.StringVar(&flagTitle, "t", "", "document title")
 	flag.StringVar(&flagOutputFile, "o", "", "output file")
 
 	flag.Parse()
@@ -78,7 +76,10 @@ func main() {
 		w = outf
 	}
 
-	var stdinContent []byte
+	var (
+		stdinContent    []byte
+		documentContent []byte
+	)
 
 	for _, file := range args {
 		if file == "-" {
@@ -91,16 +92,13 @@ func main() {
 				}
 			}
 
-			r := bytes.NewReader(stdinContent)
-
-			err = Render(w, r)
-			if err != nil {
-				log.Fatal(err)
-			}
+			documentContent = append(documentContent, stdinContent...)
 		} else {
 			var (
 				err error
 				f   *os.File
+
+				fileContent []byte
 			)
 
 			f, err = os.Open(file)
@@ -109,8 +107,17 @@ func main() {
 			}
 			defer f.Close()
 
-			Render(w, f)
+			fileContent, err = ioutil.ReadAll(f)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			documentContent = append(documentContent, fileContent...)
 		}
 	}
 
+	err := Render(flagTitle, w, documentContent)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

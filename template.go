@@ -6,7 +6,9 @@ const htmlTemplate = `
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Document title</title>
+	{{if .Title}}
+	<title>{{.Title}}</title>
+	{{end}}
 	<style>
 	:root {
 		--phi: 1.618033988749895;
