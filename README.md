@@ -1,12 +1,14 @@
 # md2html
 
-Convert markdown files to HTML.
+Command line utility to convert Markdown to a self-contained HTML
+document with styles.
 
 ## Implemented styles
 
-* H1
-* H2
-* H3
+* body
+* h1
+* h2
+* h3
 * hr
 * p
 * ul
